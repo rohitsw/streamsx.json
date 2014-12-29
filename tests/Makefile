@@ -15,7 +15,7 @@ tests=BasicTest ListTest SetOfListTest
 rntest=./scripts/testRunner.sh
 ftest=./scripts/expectFail.sh
 
-all: BasicTest ListTest SetOfListTest NullBasicTest RecordArrayListTest CompileFailtest
+all: BasicTest ListTest SetOfListTest NullBasicTest RecordArrayListTest CompileFailtest ConsistentRegionTTOJFailDisttest ConsistentRegionJTOTFailDisttest
 	@echo "Tests Passed"
 
 compile: ${tests}
@@ -28,5 +28,7 @@ compile: ${tests}
 %Failtest:
 	${ftest} ${sc} -T ${args} --output-directory ${outputdir}/$@ -M ${ns}::$@ 
 
+%FailDisttest:
+	${ftest} ${sc} ${args} --output-directory ${outputdir}/$@ -M ${ns}::$@ 
 clean:
 	rm -rf ${outputdir}

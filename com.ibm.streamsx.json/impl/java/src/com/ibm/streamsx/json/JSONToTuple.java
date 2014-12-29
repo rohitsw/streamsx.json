@@ -41,6 +41,7 @@ import com.ibm.streams.operator.model.OutputPortSet;
 import com.ibm.streams.operator.model.OutputPorts;
 import com.ibm.streams.operator.model.Parameter;
 import com.ibm.streams.operator.model.PrimitiveOperator;
+import com.ibm.streams.operator.state.ConsistentRegionContext;
 import com.ibm.streams.operator.types.RString;
 import com.ibm.streams.operator.types.Timestamp;
 
@@ -50,8 +51,8 @@ import com.ibm.streams.operator.types.Timestamp;
 	@OutputPortSet(cardinality=1, optional=true)})
 @Libraries(value="@STREAMS_INSTALL@/ext/lib/JSON4J.jar")
 @PrimitiveOperator(name="JSONToTuple", description=JSONToTuple.DESC)
-public class JSONToTuple extends AbstractOperator  
-{
+public class JSONToTuple extends AbstractOperator  {
+	
 	private String jsonStringAttribute = "jsonString";
 	private Logger l = Logger.getLogger(JSONToTuple.class.getCanonicalName());
 	boolean ignoreParsingError = false;
@@ -98,6 +99,17 @@ public class JSONToTuple extends AbstractOperator
 		}
 		return true;
 	}
+	
+	//consistent region checks
+	@ContextCheck(compile = true)
+	public static void checkInConsistentRegion(OperatorContextChecker checker) {
+		ConsistentRegionContext consistentRegionContext = 
+				checker.getOperatorContext().getOptionalContext(ConsistentRegionContext.class);
+		
+		if(consistentRegionContext != null && consistentRegionContext.isStartOfRegion()) {
+			checker.setInvalidContext("JSONToTuple operator cannot be placed at the start of a consistent region.", new String[] {});
+		}
+	}
 
 	@Override
 	public void initialize(OperatorContext op) throws Exception {
@@ -141,6 +153,7 @@ public class JSONToTuple extends AbstractOperator
 		return t;
 	}
 
+	@Override
 	public void process(StreamingInput<Tuple> stream, Tuple tuple) throws Exception {
 		String jsonInput = tuple.getString(jsonStringAttribute);
 		
@@ -532,16 +545,18 @@ public class JSONToTuple extends AbstractOperator
 		return schema.getTuple(attrmap);
 	}
 
+	
 	static final String DESC = 
 			"This operator converts JSON strings into SPL Tuples. The tuple structure is expected to match the JSON schema." +
-					" A subset of the attributes can be specified as well. " +
-					" Only those attributes that are present in the Tuple schema and JSON input will be converted. All other attributes will be ignored." +
-					" If an invalid JSON string is found in the input, the operator will fail. " +
-					" This behavior can be overridden by specifying the optional output port or by specifying the \\\"ignoreParsingError\\\" parameter." +
-					" Atributes from the input stream that match those in the output stream will be automaticall copied over. " +
-					" However, if they also exist in the JSON input, their assigned value will be of that specified in the JSON." +
-					" Null values in JSON arrays are ignored. Null values for all other attributes will result in default initializled output attributes. " +
-					" Limitations:" +
-					" BLOB, MAP and COMPLEX attribute types are not supported in the output tuple schema at this time and will be ignored."
-					;
+			" A subset of the attributes can be specified as well. " +
+			" Only those attributes that are present in the Tuple schema and JSON input will be converted. All other attributes will be ignored." +
+			" If an invalid JSON string is found in the input, the operator will fail. " +
+			" This behavior can be overridden by specifying the optional output port or by specifying the \\\"ignoreParsingError\\\" parameter." +
+			" Atributes from the input stream that match those in the output stream will be automaticall copied over. " +
+			" However, if they also exist in the JSON input, their assigned value will be of that specified in the JSON." +
+			" Null values in JSON arrays are ignored. Null values for all other attributes will result in default initializled output attributes. " +
+			" Limitations:" +
+			" BLOB, MAP and COMPLEX attribute types are not supported in the output tuple schema at this time and will be ignored."
+		;
+
 }

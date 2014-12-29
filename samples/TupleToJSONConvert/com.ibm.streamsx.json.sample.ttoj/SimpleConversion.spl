@@ -9,7 +9,7 @@ namespace com.ibm.streamsx.json.sample.ttoj;
 use com.ibm.streamsx.json::*;
 
 /**
- * Simple example of an using [TupleToJSON] to convert SPL Tuples into JSON Strings
+ * Simple example of an using TupleToJSON operator to convert SPL Tuples into JSON Strings
  * 
  */
 composite SimpleTupleConvert {

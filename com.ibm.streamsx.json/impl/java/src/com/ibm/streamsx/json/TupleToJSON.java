@@ -20,7 +20,9 @@ import com.ibm.streams.operator.StreamingInput;
 import com.ibm.streams.operator.StreamingOutput;
 import com.ibm.streams.operator.Tuple;
 import com.ibm.streams.operator.Type;
+import com.ibm.streams.operator.OperatorContext.ContextCheck;
 import com.ibm.streams.operator.Type.MetaType;
+import com.ibm.streams.operator.compile.OperatorContextChecker;
 import com.ibm.streams.operator.encoding.EncodingFactory;
 import com.ibm.streams.operator.encoding.JSONEncoding;
 import com.ibm.streams.operator.logging.TraceLevel;
@@ -30,6 +32,7 @@ import com.ibm.streams.operator.model.OutputPortSet;
 import com.ibm.streams.operator.model.OutputPorts;
 import com.ibm.streams.operator.model.Parameter;
 import com.ibm.streams.operator.model.PrimitiveOperator;
+import com.ibm.streams.operator.state.ConsistentRegionContext;
 
 @InputPorts(@InputPortSet(cardinality=1, optional=false))
 @OutputPorts(@OutputPortSet(cardinality=1, optional=false))
@@ -55,6 +58,17 @@ public class TupleToJSON extends AbstractOperator {
 		this.rootAttribute = value;
 	}
 
+	//consistent region checks
+	@ContextCheck(compile = true)
+	public static void checkInConsistentRegion(OperatorContextChecker checker) {
+		ConsistentRegionContext consistentRegionContext = 
+				checker.getOperatorContext().getOptionalContext(ConsistentRegionContext.class);
+		
+		if(consistentRegionContext != null && consistentRegionContext.isStartOfRegion()) {
+			checker.setInvalidContext("TupleToJSON operator cannot be placed at the start of a consistent region.", new String[] {});
+		}
+	}
+
 	@Override
 	public void initialize(OperatorContext op) throws Exception {
 		super.initialize(op);
@@ -72,7 +86,8 @@ public class TupleToJSON extends AbstractOperator {
 		}
 	}
 
-	public void process(StreamingInput<Tuple> stream, Tuple tuple) throws Exception 	{
+	@Override
+	public void process(StreamingInput<Tuple> stream, Tuple tuple) throws Exception {
 		StreamingOutput<OutputTuple> ops = getOutput(0);
 		final String jsonData;
 		if(rootAttribute == null) 

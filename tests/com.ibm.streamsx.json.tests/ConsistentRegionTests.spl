@@ -1,0 +1,60 @@
+//
+// *******************************************************************************
+// * Copyright (C)2014, International Business Machines Corporation and *
+// * others. All Rights Reserved. *
+// *******************************************************************************
+//
+namespace com.ibm.streamsx.json.tests;
+
+
+composite ConsistentRegionTTOJFailDisttest {
+	
+    type
+		MyType = rstring name, rstring value, int32 age;
+
+    graph
+    
+    	
+    	stream<MyType> InputS = Beacon() {
+			param
+				iterations : 1u;
+			output InputS : name = "name", value="value", age=10;
+		}
+    	
+    
+        @consistent(trigger=periodic, period=10.0)
+        stream<rstring jsonString> JsonS = 
+        	com.ibm.streamsx.json::TupleToJSON(InputS)
+        {}
+         
+        () as SinkOp = FileSink(JsonS) {
+        	param
+        		file : "/dev/null";        	
+        }
+        () as JCPOp = JobControlPlane() {}
+}
+
+composite ConsistentRegionJTOTFailDisttest {
+	
+    type
+		MyType = rstring name, rstring value, int32 age;
+
+    graph
+    
+		stream<rstring jsonString> JsonS = Beacon() {
+		param
+			iterations : 1u;
+		output JsonS : jsonString = "{\"b\" : [\"a\", null, \"c\", null ]}";
+		}
+    	
+        @consistent(trigger=periodic, period=10.0)
+        stream<MyType> OutputS = 
+        	com.ibm.streamsx.json::JSONToTuple(JsonS)
+        {}
+         
+        () as SinkOp = FileSink(OutputS) {
+        	param
+        		file : "/dev/null";        	
+        }
+        () as JCPOp = JobControlPlane() {}
+}

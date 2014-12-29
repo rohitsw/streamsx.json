@@ -9,7 +9,7 @@ namespace com.ibm.streamsx.json.sample.jtot;
 use com.ibm.streamsx.json::*;
 
 /**
- * Simple example of an using [JSONToTuple] to convert JSON Strings into SPL Tuples
+ * Simple example of an using JSONToTuple operator to convert JSON Strings into SPL Tuples
  * 
  */
 composite SimpleJsonConvert {
